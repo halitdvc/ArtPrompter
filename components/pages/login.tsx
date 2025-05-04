@@ -132,7 +132,7 @@ const LoginScreen = ({ navigation }) => {
       style={styles.background}
     >
       <View style={styles.container}>
-        <Text style={styles.title}>PromptForge</Text>
+        <Text style={styles.title}>Art Promter</Text>
         <Text style={styles.subtitle}>AI Prompt Oluşturucu</Text>
         
         <View style={styles.formContainer}>

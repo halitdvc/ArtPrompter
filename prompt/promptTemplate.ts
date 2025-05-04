@@ -5,14 +5,10 @@ export function createTemplatedPrompt(selections: PromptSelections): string {
   // Her kategori için ilk seçimi alır (veya boş bırakır)
   const getSelectionText = (key: string): string => {
     if (!selections[key] || selections[key].length === 0) {
-      // Dil seçimi için özel kontrol
-      if (key === 'promptLanguage' && selections['language_custom'] && selections['language_custom'].length > 0) {
-        return selections['language_custom'][0];
-      }
-      
-      // Ana nesne için özel kontrol
-      if (key === 'mainObject' && selections['mainObject_custom'] && selections['mainObject_custom'].length > 0) {
-        return selections['mainObject_custom'][0];
+      // Genel özel değer kontrolü - herhangi bir adımın _custom değeri varsa kullan
+      const customKey = `${key}_custom`;
+      if (selections[customKey] && selections[customKey].length > 0) {
+        return selections[customKey][0];
       }
       
       return '';
@@ -161,14 +157,10 @@ export function createTemplatedPrompt2(selections: PromptSelections): string {
   // Her kategori için ilk seçimi alır (veya boş bırakır)
   const getSelectionText = (key: string): string => {
     if (!selections[key] || selections[key].length === 0) {
-      // Dil seçimi için özel kontrol
-      if (key === 'promptLanguage' && selections['language_custom'] && selections['language_custom'].length > 0) {
-        return selections['language_custom'][0];
-      }
-      
-      // Ana nesne için özel kontrol
-      if (key === 'mainObject' && selections['mainObject_custom'] && selections['mainObject_custom'].length > 0) {
-        return selections['mainObject_custom'][0];
+      // Genel özel değer kontrolü - herhangi bir adımın _custom değeri varsa kullan
+      const customKey = `${key}_custom`;
+      if (selections[customKey] && selections[customKey].length > 0) {
+        return selections[customKey][0];
       }
       
       return '';
@@ -257,8 +249,7 @@ export function createTemplatedPrompt2(selections: PromptSelections): string {
     templateLines.push(`- Oluşturduğun prompt (${getSelectionText('wordCount')}) Kelimeyi geçmesin.`);
 
   // Ana template
-  const template = `
-Sen bir görsel sanat yapay zekası için, aşağıdaki bilgileri kullanarak bir prompt yazacaksın:
+  const template = `Sen bir görsel sanat yapay zekası için, aşağıdaki bilgileri kullanarak bir prompt yazacaksın:
 ${templateLines.join('\n')}
 
 Kurallar:
@@ -266,11 +257,14 @@ Kurallar:
 - ❗ Madde işareti, numara, başlık kullanma.
 - ❗ Sadece tek parça, bütün bir akıcı metin üret.
 - ❗ Doğrudan görsel oluşturacak bir kompozisyon anlatımı gibi yaz.
-- ❗ İngilizce yazılacaksa dil bilgisine dikkat et.
-- ❗ Yaklaşık 100-200 kelime uzunluğunda olsun.
+- ❗ Hangi dil isteniyorsa promptu o dilde yaz ve o dilin gramer kurallarına sıkı sıkıya uy.
+- ❗ Kullanılacak dilin dil bilgisi ve yazım kurallarına özen göster.
+- ❗ Bu prompt farkli bir ai da gorsel olusturmak icin kullanilacak.
+- ❗ Prompt ai in gorsel olusturmasi icin emir vermeli.
+- ❗ Kelime sayisina dikkat et.
 
 Şimdi bu bilgilerle sadece tek parça bir prompt metni üret.
   `.trim();
 
   return template;
-} 
+}

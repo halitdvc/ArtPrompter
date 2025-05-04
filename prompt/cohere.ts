@@ -17,7 +17,7 @@ export async function generatePrompt(selections: MultiplePromptSelections): Prom
 
     // Template kullanarak prompt oluştur
     const promptTemplate = createTemplatedPrompt(selections);
-    console.log("promptTemplate", promptTemplate);
+    //console.log("promptTemplate", promptTemplate);
 
     // Fetch API kullanarak doğrudan istek gönder
     const response = await fetch('https://api.cohere.ai/v1/generate', {
@@ -40,7 +40,7 @@ export async function generatePrompt(selections: MultiplePromptSelections): Prom
     }
 
     const data = await response.json();
-    console.log("response", data);
+    //console.log("response", data);
     return postProcessPrompt(data.generations[0].text.trim());
   } catch (error) {
     console.error('Prompt oluşturma hatası:', error);
@@ -60,7 +60,7 @@ export async function generatePrompt2(selections: MultiplePromptSelections): Pro
 
     // Template2 kullanarak prompt oluştur
     const promptTemplate = createTemplatedPrompt2(selections);
-    console.log("promptTemplate2", promptTemplate);
+    //console.log("promptTemplate2", promptTemplate);
 
     // Fetch API kullanarak doğrudan istek gönder
     const response = await fetch('https://api.cohere.ai/v1/generate', {

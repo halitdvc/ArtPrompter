@@ -14,8 +14,8 @@ import {
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { generatePrompt as cohereGeneratePrompt, MultiplePromptSelections } from '../../prompt/cohere';
-import { generatePrompt as openaiGeneratePrompt } from '../../prompt/openai';
+import { generatePrompt as cohereGeneratePrompt, generatePrompt2 as cohereGeneratePrompt2, MultiplePromptSelections } from '../../prompt/cohere';
+import { generatePrompt as openaiGeneratePrompt, generatePrompt2 as openaiGeneratePrompt2 } from '../../prompt/openai';
 import { PromptSelections } from '../../prompt/promptFlow';
 import ContinueButton from '../atoms/ContinueButton';
 
@@ -28,9 +28,7 @@ const PromptResult = ({ route, navigation }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [wordCount, setWordCount] = useState(0);
-  const [textHeight, setTextHeight] = useState(200);
   const [apiType, setApiType] = useState('cohere');
-  const contentSizeChangedRef = useRef(false);
 
   useEffect(() => {
     getApiTypeAndGeneratePrompt();
@@ -54,6 +52,9 @@ const PromptResult = ({ route, navigation }) => {
     setError('');
     
     try {
+      // Debug: Teslim alınan seçimleri yazdır
+      //console.log("PromptResult - Gelen seçimler:", selections);
+      
       // PromptSelections tipini MultiplePromptSelections tipine dönüştür
       const formattedSelections: MultiplePromptSelections = {};
       
@@ -62,14 +63,23 @@ const PromptResult = ({ route, navigation }) => {
         if (selections[key] && selections[key].length > 0) {
           formattedSelections[key] = selections[key];
         }
+        
+        // _custom değerlerini de ekleyelim
+        const customKey = `${key}_custom`;
+        if (selections[customKey] && selections[customKey].length > 0) {
+          formattedSelections[customKey] = selections[customKey];
+        }
       });
+      
+      // Debug: Formatlanmış seçimleri yazdır
+      //console.log("PromptResult - Formatlanmış seçimler:", formattedSelections);
       
       // API türüne göre prompt oluştur
       let generatedPrompt = '';
       if (currentApiType === 'openai') {
-        generatedPrompt = await openaiGeneratePrompt(formattedSelections);
+        generatedPrompt = await openaiGeneratePrompt2(formattedSelections);
       } else {
-        generatedPrompt = await cohereGeneratePrompt(formattedSelections);
+        generatedPrompt = await cohereGeneratePrompt2(formattedSelections);
       }
       
       setPrompt(generatedPrompt);
@@ -122,23 +132,6 @@ const PromptResult = ({ route, navigation }) => {
     }
   };
   
-  // TextInput'un içeriğine göre yüksekliğini ayarla
-  const onTextLayout = (e) => {
-    if (contentSizeChangedRef.current) return;
-    
-    const { height } = e.nativeEvent.contentSize;
-    const newHeight = Math.max(200, height + 40); // En az 200px yükseklik, içerik için 40px padding
-    
-    if (newHeight !== textHeight) {
-      contentSizeChangedRef.current = true;
-      setTextHeight(newHeight);
-      // Reset the flag after the state update has been processed
-      setTimeout(() => {
-        contentSizeChangedRef.current = false;
-      }, 100);
-    }
-  };
-
   return (
     <ImageBackground 
       source={require('../../assets/images/arkaPlan.png')} 
@@ -172,15 +165,12 @@ const PromptResult = ({ route, navigation }) => {
           <View style={styles.resultContainer}>
             <Text style={styles.wordCountText}>Kelime Sayısı: {wordCount}</Text>
             
-            <View style={[styles.promptContainer, { minHeight: textHeight }]}>
-              <TextInput 
-                style={styles.promptText}
-                value={prompt}
-                multiline
-                scrollEnabled={true}
-                editable={false}
-                onContentSizeChange={onTextLayout}
-              />
+            <View style={styles.promptContainer}>
+              <ScrollView style={{ flex: 1 }}>
+                <Text style={styles.promptText}>
+                  {prompt}
+                </Text>
+              </ScrollView>
             </View>
             
             <View style={styles.actionsContainer}>
@@ -301,13 +291,13 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 15,
     marginBottom: 20,
+    height: 400,
   },
   promptText: {
     color: '#FFF',
     fontSize: 16,
     lineHeight: 24,
-    padding: 5,
-    textAlignVertical: 'top',
+    padding: 10,
   },
   actionsContainer: {
     flexDirection: 'row',

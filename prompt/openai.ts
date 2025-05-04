@@ -17,7 +17,7 @@ export async function generatePrompt(selections: MultiplePromptSelections): Prom
 
     // Template kullanarak prompt oluştur
     const promptTemplate = createTemplatedPrompt(selections);
-    console.log("promptTemplate", promptTemplate);
+    //console.log("promptTemplate", promptTemplate);
 
     // OpenAI API'si için istek gönder - Burada completions endpoint'i kullanacağız çünkü daha az kısıtlaması var
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -28,7 +28,7 @@ export async function generatePrompt(selections: MultiplePromptSelections): Prom
       },
       body: JSON.stringify({
         model: 'gpt-3.5-turbo',messages: [
-            { role: 'system', content: 'Sen bir sanat prompt asistanısın. Kullanıcıdan gelen yönergelere göre yaratıcı farkli bir ai da gorsel olusturmak icin promptlar üret.' },
+            { role: 'system', content: 'Sen görsel üreten bir yapay zekaya kullanılacak yüksek kaliteli promptlar oluşturan bir asistansın. Kullanıcının verdiği öğelere göre sadece doğrudan kullanılabilir, akıcı, yaratıcı bir prompt üret. Liste yapma, sadece tek parça kompozisyon yaz.' },
             { role: 'user', content: promptTemplate }
           ],
         max_tokens: 500,
@@ -42,7 +42,7 @@ export async function generatePrompt(selections: MultiplePromptSelections): Prom
     }
 
     const data = await response.json();
-    console.log("response", data);
+    //console.log("response", data);
     return postProcessPrompt(data.choices[0].message.content.trim());
 
   } catch (error) {
@@ -63,7 +63,7 @@ export async function generatePrompt2(selections: MultiplePromptSelections): Pro
 
     // Template2 kullanarak prompt oluştur
     const promptTemplate = createTemplatedPrompt2(selections);
-    console.log("promptTemplate2", promptTemplate);
+    //console.log("promptTemplate2", promptTemplate);
 
     // OpenAI API'si için istek gönder - Burada completions endpoint'i kullanacağız
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -74,7 +74,7 @@ export async function generatePrompt2(selections: MultiplePromptSelections): Pro
       },
       body: JSON.stringify({
         model: 'gpt-3.5-turbo',messages: [
-            { role: 'system', content: 'Sen bir sanat prompt asistanısın. Kullanıcıdan gelen yönergelere göre yaratıcı farkli bir ai da gorsel olusturmak icin promptlar üret.' },
+            { role: 'system', content: 'Sen görsel üreten bir yapay zekaya kullanılacak yüksek kaliteli promptlar oluşturan bir asistansın. Kullanıcının verdiği öğelere göre sadece doğrudan kullanılabilir, akıcı, yaratıcı bir prompt üret. Liste yapma, sadece tek parça kompozisyon yaz.' },
             { role: 'user', content: promptTemplate }
           ],
         max_tokens: 500,
@@ -88,7 +88,7 @@ export async function generatePrompt2(selections: MultiplePromptSelections): Pro
     }
 
     const data = await response.json();
-    console.log("response", data);
+    //console.log("response", data);
     return postProcessPrompt(data.choices[0].message.content.trim());
 
   } catch (error) {

@@ -29,6 +29,7 @@ const PromptFlow = ({ navigation }) => {
   const [customText, setCustomText] = useState('');
   const [language, setLanguage] = useState('');
   const [mainObject, setMainObject] = useState('');
+  const [wordCount, setWordCount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -51,8 +52,14 @@ const PromptFlow = ({ navigation }) => {
     
     const optionId = currentStep.options[index].id;
     
+    // Kart seçildiğinde özel metni temizle
+    setCustomText('');
+    
     setSelections(prev => {
       const updatedSelections = { ...prev };
+      
+      // Özel metin seçeneğini kaldır
+      delete updatedSelections[`${currentStepKey}_custom`];
       
       if (currentStep?.multiple) {
         // Çoklu seçim modu
@@ -83,21 +90,40 @@ const PromptFlow = ({ navigation }) => {
             mainObject_custom: [mainObject]
           }));
         }
-        
-        // Dil seçimi yapılmış mı kontrol et
-        if (language.trim()) {
+      } 
+      // Dil adımında özel işlem yapalım
+      else if (currentStepKey === 'promptLanguage') {
+        if (customText.trim()) {
           setSelections(prev => ({
             ...prev,
-            language_custom: [language]
+            promptLanguage_custom: [customText],
+            // promptLanguage_custom yerine language_custom olarak da kaydedelim
+            // böylece eski kodla uyumlu olacak
+            language_custom: [customText]
+          }));
+          setLanguage(customText);
+        }
+      }
+      // Kelime sayısı adımında özel işlem yapalım
+      else if (currentStepKey === 'wordCount') {
+        if (wordCount.trim()) {
+          setSelections(prev => ({
+            ...prev,
+            wordCount_custom: [wordCount]
           }));
         }
-      } 
-      // Diğer adımlarda eski davranışı koru
+      }
+      // Diğer tüm adımlarda özel metin kontrolü yap
       else if (customText.trim()) {
-        setSelections(prev => ({
-          ...prev,
-          [`${currentStepKey}_custom`]: [customText]
-        }));
+        //console.log(`Özel değer ekleniyor: ${currentStepKey}_custom = ${customText}`);
+        setSelections(prev => {
+          const updated = {
+            ...prev,
+            [`${currentStepKey}_custom`]: [customText]
+          };
+          //console.log('Güncellenmiş seçimler:', updated);
+          return updated;
+        });
       }
       
       const nextKey = getNextStepKey(currentStepKey);
@@ -136,10 +162,13 @@ const PromptFlow = ({ navigation }) => {
       // Son seçimleri kullan, customText'i son adımda ekle
       const finalSelections = { ...selections };
       
-      // Mevcut adımın verilerini ekleyelim
-      if (customText.trim() && currentStepKey === 'wordCount') {
-        finalSelections.wordCount_custom = [customText];
+      // Özel olarak son adımın kelime sayısı değerini tekrar kontrol edelim
+      if (currentStepKey === 'wordCount' && wordCount.trim()) {
+        finalSelections.wordCount_custom = [wordCount];
       }
+      
+      // Gönderilecek seçimleri loglayalım
+      //console.log('Son seçimler:', finalSelections);
       
       // Sonuç sayfasına git ve seçimleri parametre olarak gönder
       navigation.navigate('PromptResult', { selections: finalSelections });
@@ -191,6 +220,65 @@ const PromptFlow = ({ navigation }) => {
     }
   };
 
+  // TextInput onChange fonksiyonunu özelleştirelim, her değişiklikte selection objesine eklesin
+  const handleCustomTextChange = (text: string) => {
+    setCustomText(text);
+    
+    // Eğer metin boş değilse, hemen selections objesine ekleyelim
+    if (text.trim()) {
+      // Dil adımında ise language state'ini de güncelleyelim
+      if (currentStepKey === 'promptLanguage') {
+        setLanguage(text);
+      }
+      
+      setSelections(prev => ({
+        ...prev,
+        [`${currentStepKey}_custom`]: [text],
+        // Metin yazıldığında kart seçimlerini temizle
+        [currentStepKey]: []
+      }));
+      //console.log(`Anlık güncelleme - ${currentStepKey}_custom = ${text}`);
+    } else {
+      // Metin boşsa, custom değeri kaldır
+      setSelections(prev => {
+        const updated = { ...prev };
+        delete updated[`${currentStepKey}_custom`];
+        return updated;
+      });
+      
+      // Dil adımında ise language state'ini de temizleyelim
+      if (currentStepKey === 'promptLanguage') {
+        setLanguage('');
+      }
+    }
+  };
+  
+  // Ana nesne değişikliğini de anlık olarak işleyelim
+  const handleMainObjectChange = (text: string) => {
+    setMainObject(text);
+    
+    if (text.trim()) {
+      setSelections(prev => ({
+        ...prev,
+        mainObject_custom: [text]
+      }));
+      //console.log(`Anlık güncelleme - mainObject_custom = ${text}`);
+    }
+  };
+  
+  // Kelime sayısı değişikliğini de anlık olarak işleyelim
+  const handleWordCountChange = (text: string) => {
+    setWordCount(text);
+    
+    if (text.trim()) {
+      setSelections(prev => ({
+        ...prev,
+        wordCount_custom: [text]
+      }));
+      //console.log(`Anlık güncelleme - wordCount_custom = ${text}`);
+    }
+  };
+
   return (
     <ImageBackground 
       source={require('../../assets/images/arkaPlan.png')} 
@@ -224,13 +312,55 @@ const PromptFlow = ({ navigation }) => {
         )}
         
         <View style={styles.cardsContainer}>
-          {currentStepKey !== 'mainObject' && currentStepKey !== 'itemsToAdd' && currentStepKey !== 'itemsToAvoid' && (
+          {currentStepKey !== 'mainObject' && currentStepKey !== 'itemsToAdd' && currentStepKey !== 'itemsToAvoid' && currentStepKey !== 'wordCount' && currentStepKey !== 'promptLanguage' && (
+            <>
+              <ArtCardGrid 
+                artMovements={artMovements} 
+                onSelectCard={handleSelect}
+              />
+              
+              <View style={styles.blueInputBar}>
+                <View style={styles.circleIndent} />
+                <TextInput
+                  style={styles.blueInputText}
+                  placeholder={`Veya kendi ${currentStep.title.toLowerCase()} değerinizi girin`}
+                  placeholderTextColor="rgba(255, 255, 255, 0.7)"
+                  value={customText}
+                  onChangeText={handleCustomTextChange}
+                />
+              </View>
+            </>
+          )}
+        </View>
+        
+        {currentStepKey === 'promptLanguage' && (
+          <>
             <ArtCardGrid 
               artMovements={artMovements} 
               onSelectCard={handleSelect}
             />
-          )}
-        </View>
+            
+            {/* <View style={styles.languageInfoContainer}>
+              <View style={styles.circleIndent} />
+              <Text style={styles.languageInfoText}>
+                {language.trim() !== '' ? 
+                  `Ana adımda seçtiğiniz dil: ${language}` : 
+                  "Henüz bir dil seçilmedi veya girilmedi"}
+              </Text>
+            </View> */}
+            
+            {/* <View style={styles.blueInputBar}>
+              <View style={styles.circleIndent} />
+              <TextInput
+                style={styles.blueInputText}
+                placeholder="Lütfen prompt dilini belirtiniz"
+                placeholderTextColor="rgba(255, 255, 255, 0.7)"
+                value={customText}
+                onChangeText={handleCustomTextChange}
+              />
+            </View> */}
+          </>
+        )}
         
         {currentStepKey === 'mainObject' && (
           <>
@@ -241,21 +371,24 @@ const PromptFlow = ({ navigation }) => {
                 placeholder="Ana nesne olarak ne görmek istiyorsunuz?"
                 placeholderTextColor="rgba(255, 255, 255, 0.7)"
                 value={mainObject}
-                onChangeText={setMainObject}
-              />
-            </View>
-            
-            <View style={styles.blueInputBar}>
-              <View style={styles.circleIndent} />
-              <TextInput
-                style={styles.blueInputText}
-                placeholder="Prompt dili (örn: Türkçe, İngilizce)"
-                placeholderTextColor="rgba(255, 255, 255, 0.7)"
-                value={language}
-                onChangeText={setLanguage}
+                onChangeText={handleMainObjectChange}
               />
             </View>
           </>
+        )}
+        
+        {currentStepKey === 'wordCount' && (
+          <View style={styles.blueInputBar}>
+            <View style={styles.circleIndent} />
+            <TextInput
+              style={styles.blueInputText}
+              placeholder="Kelime sayısını girin (örn: 20, 30, 50)"
+              placeholderTextColor="rgba(255, 255, 255, 0.7)"
+              value={wordCount}
+              onChangeText={handleWordCountChange}
+              keyboardType="numeric"
+            />
+          </View>
         )}
         
         {currentStepKey === 'itemsToAdd' && (
@@ -266,7 +399,7 @@ const PromptFlow = ({ navigation }) => {
               placeholder="Eklemek istediğiniz öğeleri virgülle ayırarak yazın"
               placeholderTextColor="rgba(255, 255, 255, 0.7)"
               value={customText}
-              onChangeText={setCustomText}
+              onChangeText={handleCustomTextChange}
             />
           </View>
         )}
@@ -279,29 +412,7 @@ const PromptFlow = ({ navigation }) => {
               placeholder="Eklemek istemediğiniz öğeleri virgülle ayırarak yazın"
               placeholderTextColor="rgba(255, 255, 255, 0.7)"
               value={customText}
-              onChangeText={setCustomText}
-            />
-          </View>
-        )}
-        
-        {currentStepKey === 'promptLanguage' && language.trim() !== '' && (
-          <View style={styles.languageInfoContainer}>
-            <View style={styles.circleIndent} />
-            <Text style={styles.languageInfoText}>
-              Ana adımda seçtiğiniz dil: <Text style={styles.languageHighlight}>{language}</Text>
-            </Text>
-          </View>
-        )}
-        
-        {currentStepKey !== 'mainObject' && currentStepKey === 'promptLanguage' && language.trim() === '' && (
-          <View style={styles.blueInputBar}>
-            <View style={styles.circleIndent} />
-            <TextInput
-              style={styles.blueInputText}
-              placeholder="Lütfen prompt dilini belirtiniz"
-              placeholderTextColor="rgba(255, 255, 255, 0.7)"
-              value={customText}
-              onChangeText={setCustomText}
+              onChangeText={handleCustomTextChange}
             />
           </View>
         )}
