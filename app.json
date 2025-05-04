@@ -19,11 +19,16 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/favicon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.halitdvc.artPromter"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "3e2d32cd-7fe6-4c18-ad42-fb6f5c02a9b2"
+      }
     }
-    
   }
 }
