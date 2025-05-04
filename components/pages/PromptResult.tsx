@@ -13,7 +13,9 @@ import {
   Platform
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { generatePrompt, createTemplatedPrompt, MultiplePromptSelections } from '../../prompt/cohere';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { generatePrompt as cohereGeneratePrompt, MultiplePromptSelections } from '../../prompt/cohere';
+import { generatePrompt as openaiGeneratePrompt } from '../../prompt/openai';
 import { PromptSelections } from '../../prompt/promptFlow';
 import ContinueButton from '../atoms/ContinueButton';
 
@@ -27,13 +29,27 @@ const PromptResult = ({ route, navigation }) => {
   const [error, setError] = useState('');
   const [wordCount, setWordCount] = useState(0);
   const [textHeight, setTextHeight] = useState(200);
+  const [apiType, setApiType] = useState('cohere');
   const contentSizeChangedRef = useRef(false);
 
   useEffect(() => {
-    generatePromptFromSelections();
+    getApiTypeAndGeneratePrompt();
   }, []);
 
-  const generatePromptFromSelections = async () => {
+  const getApiTypeAndGeneratePrompt = async () => {
+    try {
+      const storedApiType = await AsyncStorage.getItem('API_TYPE');
+      if (storedApiType) {
+        setApiType(storedApiType);
+      }
+      generatePromptFromSelections(storedApiType || 'cohere');
+    } catch (error) {
+      console.error('API tipini alma hatası:', error);
+      generatePromptFromSelections('cohere'); // Varsayılan olarak Cohere kullan
+    }
+  };
+
+  const generatePromptFromSelections = async (currentApiType) => {
     setLoading(true);
     setError('');
     
@@ -48,8 +64,14 @@ const PromptResult = ({ route, navigation }) => {
         }
       });
       
-      // Cohere API kullanarak prompt oluştur
-      const generatedPrompt = await generatePrompt(formattedSelections);
+      // API türüne göre prompt oluştur
+      let generatedPrompt = '';
+      if (currentApiType === 'openai') {
+        generatedPrompt = await openaiGeneratePrompt(formattedSelections);
+      } else {
+        generatedPrompt = await cohereGeneratePrompt(formattedSelections);
+      }
+      
       setPrompt(generatedPrompt);
       
       // Kelime sayısını hesapla
@@ -75,7 +97,7 @@ const PromptResult = ({ route, navigation }) => {
   };
 
   const handleTryAgain = () => {
-    generatePromptFromSelections();
+    generatePromptFromSelections(apiType);
   };
 
   const handleGoBack = () => {
@@ -124,8 +146,11 @@ const PromptResult = ({ route, navigation }) => {
     >
       <ScrollView style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>PromptForge</Text>
+          <Text style={styles.title}>Art Promter</Text>
           <Text style={styles.subtitle}>Oluşturulan Prompt</Text>
+          <Text style={styles.apiInfo}>
+            {apiType === 'cohere' ? 'Cohere AI' : 'OpenAI GPT'} kullanılıyor
+          </Text>
         </View>
 
         {loading ? (
@@ -199,73 +224,90 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    padding: 16,
+    padding: 20,
   },
   header: {
-    marginBottom: 20,
     alignItems: 'center',
+    marginBottom: 20,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#FFFF00',
-    marginBottom: 10,
+    marginBottom: 5,
     textShadowColor: '#000',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 5,
   },
   subtitle: {
     fontSize: 18,
-    fontWeight: 'bold',
     color: '#FFF',
-    marginBottom: 10,
+    marginBottom: 5,
+    textShadowColor: '#000',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+  },
+  apiInfo: {
+    fontSize: 14,
+    color: '#AAA',
+    marginBottom: 15,
+    fontStyle: 'italic',
   },
   loadingContainer: {
-    alignItems: 'center',
+    flex: 1,
     justifyContent: 'center',
-    padding: 40,
+    alignItems: 'center',
+    padding: 20,
   },
   loadingText: {
     color: '#FFF',
-    marginTop: 16,
+    marginTop: 10,
     fontSize: 16,
   },
   errorContainer: {
     padding: 20,
-    backgroundColor: 'rgba(255, 0, 0, 0.1)',
-    borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    borderRadius: 10,
   },
   errorText: {
-    color: '#FFF',
-    marginBottom: 16,
+    color: '#FF6B6B',
+    marginBottom: 15,
     textAlign: 'center',
   },
+  button: {
+    backgroundColor: '#8A2BE2',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  buttonText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+  },
   resultContainer: {
-    width: '100%',
+    padding: 20,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    borderRadius: 10,
   },
   wordCountText: {
-    color: '#FFF',
-    fontSize: 14,
+    color: '#AAA',
     marginBottom: 10,
     textAlign: 'right',
   },
   promptContainer: {
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    borderRadius: 8,
-    padding: 16,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 5,
+    padding: 15,
     marginBottom: 20,
-    position: 'relative',
-    overflow: 'hidden',
   },
   promptText: {
     color: '#FFF',
     fontSize: 16,
     lineHeight: 24,
-    flex: 1,
+    padding: 5,
     textAlignVertical: 'top',
-    paddingVertical: 0,
-    paddingHorizontal: 0,
   },
   actionsContainer: {
     flexDirection: 'row',
@@ -273,10 +315,10 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   actionButton: {
-    backgroundColor: '#8A2BE2',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    backgroundColor: 'rgba(138, 43, 226, 0.8)',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
     flex: 1,
     marginHorizontal: 5,
     alignItems: 'center',
@@ -288,30 +330,6 @@ const styles = StyleSheet.create({
   navigationContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  navButton: {
-    backgroundColor: '#444',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    flex: 1,
-    marginHorizontal: 5,
-    alignItems: 'center',
-  },
-  navButtonText: {
-    color: '#FFF',
-  },
-  button: {
-    backgroundColor: '#8A2BE2',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-  },
-  buttonText: {
-    color: '#FFF',
-    fontWeight: 'bold',
   },
 });
 
