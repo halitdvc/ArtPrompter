@@ -15,14 +15,18 @@ const LoginScreen = ({ navigation }) => {
   const [apiKey, setApiKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [initialCheck, setInitialCheck] = useState(true);
+  const [selectedApi, setSelectedApi] = useState('cohere'); // 'cohere' veya 'openai'
 
   // Uygulama açıldığında API anahtarı kontrol edilir
   useEffect(() => {
     const checkApiKey = async () => {
       try {
-        const storedApiKey = await AsyncStorage.getItem('COHERE_API_KEY');
-        if (storedApiKey) {
-          navigation.replace('PromptFlow');
+        const storedApiType = await AsyncStorage.getItem('API_TYPE');
+        if (storedApiType) {
+          const storedApiKey = await AsyncStorage.getItem(`${storedApiType.toUpperCase()}_API_KEY`);
+          if (storedApiKey) {
+            navigation.replace('PromptFlow');
+          }
         }
       } catch (error) {
         console.error('API anahtarı kontrolünde hata:', error);
@@ -36,30 +40,62 @@ const LoginScreen = ({ navigation }) => {
 
   const handleLogin = async () => {
     if (!apiKey.trim()) {
-      Alert.alert('Hata', 'Lütfen Cohere API anahtarını girin.');
+      Alert.alert('Hata', `Lütfen ${selectedApi === 'cohere' ? 'Cohere' : 'OpenAI'} API anahtarını girin.`);
       return;
     }
 
     setLoading(true);
     try {
-      // API anahtarı geçerli mi kontrol edilir
-      const response = await fetch('https://api.cohere.ai/v1/tokenize', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          text: 'Test'
-        }),
-      });
+      let isValid = false;
 
-      if (response.ok) {
-        // API anahtarı AsyncStorage'a kaydedilir
-        await AsyncStorage.setItem('COHERE_API_KEY', apiKey);
+      if (selectedApi === 'cohere') {
+        // Cohere API anahtarı doğrulama
+        const response = await fetch('https://api.cohere.ai/v1/tokenize', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text: 'Test'
+          }),
+        });
+        isValid = response.ok;
+      } else {
+        // OpenAI API anahtarı doğrulama
+      
+        // OpenAI API anahtarı doğrulama
+        try {
+          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-3.5-turbo',
+              messages: [
+                { role: 'system', content: 'Sen bir test asistanısın.' },
+                { role: 'user', content: 'Merhaba, bu bir testtir.' }
+              ],
+              max_tokens: 5,
+            }),
+          });
+          isValid = response.ok;
+        } catch (error) {
+          console.error('API doğrulama hatası:', error);
+          isValid = false;
+        }
+      }
+      
+
+      if (isValid) {
+        // API anahtarı ve API türü AsyncStorage'a kaydedilir
+        await AsyncStorage.setItem(`${selectedApi.toUpperCase()}_API_KEY`, apiKey);
+        await AsyncStorage.setItem('API_TYPE', selectedApi);
         navigation.replace('PromptFlow');
       } else {
-        Alert.alert('Hata', 'Geçersiz API anahtarı. Lütfen doğru anahtarı girin.');
+        Alert.alert('Hata', `Geçersiz ${selectedApi === 'cohere' ? 'Cohere' : 'OpenAI'} API anahtarı. Lütfen doğru anahtarı girin.`);
       }
     } catch (error) {
       console.error('Giriş hatası:', error);
@@ -72,6 +108,8 @@ const LoginScreen = ({ navigation }) => {
   const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem('COHERE_API_KEY');
+      await AsyncStorage.removeItem('OPENAI_API_KEY');
+      await AsyncStorage.removeItem('API_TYPE');
       setApiKey('');
       Alert.alert('Başarılı', 'Çıkış yapıldı.');
     } catch (error) {
@@ -98,7 +136,36 @@ const LoginScreen = ({ navigation }) => {
         <Text style={styles.subtitle}>AI Prompt Oluşturucu</Text>
         
         <View style={styles.formContainer}>
-          <Text style={styles.label}>Cohere API Anahtarı</Text>
+          <Text style={styles.label}>AI Modelini Seçin</Text>
+          <View style={styles.apiSelectorContainer}>
+            <TouchableOpacity 
+              style={[
+                styles.apiSelector, 
+                selectedApi === 'cohere' && styles.apiSelectorSelected
+              ]} 
+              onPress={() => setSelectedApi('cohere')}
+            >
+              <Text style={[
+                styles.apiSelectorText,
+                selectedApi === 'cohere' && styles.apiSelectorTextSelected
+              ]}>Cohere</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[
+                styles.apiSelector, 
+                selectedApi === 'openai' && styles.apiSelectorSelected
+              ]} 
+              onPress={() => setSelectedApi('openai')}
+            >
+              <Text style={[
+                styles.apiSelectorText,
+                selectedApi === 'openai' && styles.apiSelectorTextSelected
+              ]}>OpenAI</Text>
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.label}>{selectedApi === 'cohere' ? 'Cohere' : 'OpenAI'} API Anahtarı</Text>
           <TextInput
             style={styles.input}
             placeholder="API anahtarınızı girin"
@@ -208,6 +275,30 @@ const styles = StyleSheet.create({
   logoutButtonText: {
     color: '#AAA',
     fontSize: 14,
+  },
+  apiSelectorContainer: {
+    flexDirection: 'row',
+    marginBottom: 15,
+    width: '100%',
+  },
+  apiSelector: {
+    flex: 1,
+    padding: 10,
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 5,
+    marginHorizontal: 5,
+  },
+  apiSelectorSelected: {
+    backgroundColor: '#8A2BE2',
+  },
+  apiSelectorText: {
+    color: '#EEE',
+    fontWeight: '500',
+  },
+  apiSelectorTextSelected: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
 

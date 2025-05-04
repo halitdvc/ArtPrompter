@@ -82,8 +82,6 @@ const PromptFlow = ({ navigation }) => {
             ...prev,
             mainObject_custom: [mainObject]
           }));
-        } else if (selections[currentStepKey]?.length === 0) {
-          return; // Hiçbir şey seçilmemiş ve metin de girilmemişse çık
         }
         
         // Dil seçimi yapılmış mı kontrol et
@@ -100,10 +98,6 @@ const PromptFlow = ({ navigation }) => {
           ...prev,
           [`${currentStepKey}_custom`]: [customText]
         }));
-      }
-      // Seçim yapılmadıysa ve metin de girilmediyse devam etmesin
-      else if (selections[currentStepKey]?.length === 0) {
-        return; // Hiçbir şey seçilmediyse çık
       }
       
       const nextKey = getNextStepKey(currentStepKey);
@@ -130,8 +124,10 @@ const PromptFlow = ({ navigation }) => {
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
-      // API key'i al
-      const apiKey = await AsyncStorage.getItem('COHERE_API_KEY');
+      // API tipini ve anahtarını kontrol et
+      const apiType = await AsyncStorage.getItem('API_TYPE') || 'cohere';
+      const apiKey = await AsyncStorage.getItem(`${apiType.toUpperCase()}_API_KEY`);
+      
       if (!apiKey) {
         navigation.navigate('Login');
         return;
@@ -186,7 +182,9 @@ const PromptFlow = ({ navigation }) => {
 
   const handleLogout = async () => {
     try {
-      await AsyncStorage.removeItem('COHERE_API_KEY');
+      const apiType = await AsyncStorage.getItem('API_TYPE') || 'cohere';
+      await AsyncStorage.removeItem(`${apiType.toUpperCase()}_API_KEY`);
+      await AsyncStorage.removeItem('API_TYPE');
       navigation.navigate('Login');
     } catch (error) {
       console.error('Çıkış yapma hatası:', error);
@@ -213,7 +211,7 @@ const PromptFlow = ({ navigation }) => {
             <Text style={styles.description}>
               {currentStep.multiple ? 
                 'Birden fazla seçim yapabilirsiniz.' : 
-                'Lütfen bir seçim yapın.'}
+                'Seçim yapmak zorunlu değildir.'}
             </Text>
           </View>
         </View>
@@ -320,7 +318,7 @@ const PromptFlow = ({ navigation }) => {
           
           <ContinueButton
             onPress={handleContinue}
-            disabled={isLoading || (selections[currentStepKey]?.length === 0 && !customText.trim() && !language.trim() && !mainObject.trim())}
+            disabled={isLoading}
           />
         </View>
       </ScrollView>
