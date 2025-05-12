@@ -7,7 +7,9 @@ import {
   TouchableOpacity, 
   ImageBackground, 
   Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  Platform,
+  BackHandler
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -111,7 +113,21 @@ const LoginScreen = ({ navigation }) => {
       await AsyncStorage.removeItem('OPENAI_API_KEY');
       await AsyncStorage.removeItem('API_TYPE');
       setApiKey('');
-      Alert.alert('Başarılı', 'Çıkış yapıldı.');
+      Alert.alert(
+        'Çıkış Yapıldı', 
+        'Kaydedilmiş API bilgileri silindi.', 
+        [
+          {
+            text: "Tamam", 
+            onPress: () => {
+              // Eğer platform Android ise uygulamayı kapat
+              if (Platform.OS === 'android') {
+                BackHandler.exitApp();
+              }
+            }
+          }
+        ]
+      );
     } catch (error) {
       console.error('Çıkış hatası:', error);
       Alert.alert('Hata', 'Çıkış yapılırken bir hata oluştu.');

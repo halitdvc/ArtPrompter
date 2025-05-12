@@ -452,7 +452,9 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    paddingTop: 40,
   },
   loadingContainer: {
     flex: 1,
@@ -579,7 +581,7 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     position: 'absolute',
-    top: 15,
+    top: 55,
     right: 15,
     zIndex: 10,
     padding: 10,

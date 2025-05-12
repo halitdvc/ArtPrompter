@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 12,
     padding: 8,
-    width: '23%',
+    width: '30%',
     margin: 2,
     alignItems: "center",
     shadowColor: "#000",
@@ -67,18 +67,18 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     backgroundColor: "rgba(255,255,255,0.3)",
-    borderRadius: 50,
-    width: 50,
-    height: 50,
+    borderRadius: 35,
+    width: 70,
+    height: 70,
     justifyContent: "center",
     alignItems: "center",
     marginVertical: 5,
     overflow: 'hidden',
   },
   image: {
-    width: 50,
-    height: 50,
-    borderRadius: 50,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
   },
   imagePlaceholder: {
     width: 20,

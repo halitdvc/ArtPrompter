@@ -82,6 +82,12 @@ export const artistStyles: PromptOption[] = [
     description: 'Dışavurumculuk akımıyla öne çıkar; güçlü duygusal ifadeler ve dramatik kompozisyonlarla tanınır.',
     image: require('../assets/images/ArtPrompter/sanatTarzi/edvard-munch.png'),
   },
+  {
+    id: 'hokusai',
+    title: 'Hokusai',
+    description: 'Dışavurumculuk akımıyla öne çıkar; güçlü duygusal ifadeler ve dramatik kompozisyonlarla tanınır.',
+    image: require('../assets/images/ArtPrompter/sanatTarzi/hokusai.png'),
+  },
 ];
 
 // Dijital Sanat Tarzı

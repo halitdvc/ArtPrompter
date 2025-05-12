@@ -166,11 +166,9 @@ const PromptResult = ({ route, navigation }) => {
             <Text style={styles.wordCountText}>Kelime Sayısı: {wordCount}</Text>
             
             <View style={styles.promptContainer}>
-              <ScrollView style={{ flex: 1 }}>
-                <Text style={styles.promptText}>
-                  {prompt}
-                </Text>
-              </ScrollView>
+              <Text style={styles.promptText}>
+                {prompt}
+              </Text>
             </View>
             
             <View style={styles.actionsContainer}>
@@ -214,7 +212,9 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    paddingTop: 40,
   },
   header: {
     alignItems: 'center',
@@ -291,7 +291,6 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 15,
     marginBottom: 20,
-    height: 400,
   },
   promptText: {
     color: '#FFF',
